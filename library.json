@@ -1,0 +1,20 @@
+{
+  "name": "SdFatFS",
+  "version": "1.0.0",
+  "description": "With this library you can use SdFat functionalities with other libraries that internally use the ESP32 file system based on fs::FS",
+  "keywords": "SdFat, fs::FS, esp32",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/anp59/SdFatFS.git"
+  },
+  "authors": [
+    {
+      "name": "anp59"
+    }
+  ],
+  "license": "GPL-3.0",
+  "homepage": "https://github.com/anp59/SdFatFS.git",
+  "dependencies": {},
+  "frameworks": ["arduino"],
+  "platforms": "espressif32"
+}
