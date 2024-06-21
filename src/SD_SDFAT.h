@@ -4,6 +4,11 @@
 #include "FS.h"
 #include "SdFat.h"
 
+// Line with test for __has_include must not have operators or parentheses.
+#if defined __has_include
+#if __has_include(<SD.h>)
+#warning please deactivate including of <SD.h>
+#else
 typedef enum {
   CARD_NONE,
   CARD_MMC,
@@ -11,6 +16,8 @@ typedef enum {
   CARD_SDHC,
   CARD_UNKNOWN
 } sdcard_type_t;
+#endif
+#endif
 
 namespace fs
 {
