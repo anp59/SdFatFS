@@ -31,7 +31,7 @@ class SDFATFSImpl : public FSImpl
 class SDFATFSFileImpl : public FileImpl
 {
   protected:
-#if SDFAT_FILE_TYPE < 2
+#if SDFAT_FILE_TYPE == 1
     /** Select type for File. */
     typedef File32 FileType;
 #elif SDFAT_FILE_TYPE == 2

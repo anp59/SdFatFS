@@ -102,7 +102,7 @@ bool SDFATFSFileImpl::seek(uint32_t pos, SeekMode mode) {
 }
 
 size_t SDFATFSFileImpl::position() const {
-    return (size_t)_file.curPosition();
+	return ( !_file || _file.getError() ) ? (size_t)-1 : (size_t)_file.position();
 }
 
 size_t SDFATFSFileImpl::size() const {
