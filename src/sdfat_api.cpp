@@ -80,8 +80,10 @@ size_t SDFATFSFileImpl::write(const uint8_t *buf, size_t size) {
     return _file.write(buf, size);
 }
 
+// set return value to zero in case of SdFat read error (-1)
 size_t SDFATFSFileImpl::read(uint8_t *buf, size_t size) {
-    return _file.read(buf, size);
+    size_t rc = _file.read(buf, size);
+    return ( rc == (size_t)-1 ) ? 0 : rc; 
 }
 
 void SDFATFSFileImpl::flush() {
