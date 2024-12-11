@@ -31,7 +31,7 @@ public:
     bool begin(SdSpiConfig spiConfig);
     void end();
     
-    uint8_t cardType();
+    sdcard_type_t cardType();
     uint64_t cardSize() { return totalBytes(); }
     size_t numSectors();
     size_t sectorSize();

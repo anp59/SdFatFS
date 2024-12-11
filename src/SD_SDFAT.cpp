@@ -17,7 +17,7 @@ bool SDFATFS::begin(SdSpiConfig spiConfig) {
 
 void SDFATFS::end() { return sd_obj.end(); }
 
-uint8_t SDFATFS::cardType() {
+sdcard_type_t SDFATFS::cardType() {
     if (! sd_obj.sdErrorCode() ) {    // SD mount failed = 43
         uint8_t type = sd_obj.card()->type();
         if ( type == SD_CARD_TYPE_SD1) return CARD_SD;
