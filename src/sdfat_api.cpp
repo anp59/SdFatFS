@@ -36,8 +36,8 @@ FileImplPtr SDFATFSImpl::open(const char *path, const char *mode, const bool cre
     if (create && (*mode == 'w' || *mode == 'a')) {
         PathAnalyze pa;
         if ( pa.analyze(path) ) { 
-            _sdf.mkdir(pa.isdirpath() ? pa.path() : pa.dirname(), true); // no error check (mkdir fails if path exist)
-            return std::make_shared<SDFATFSFileImpl>(this, path, !pa.isdirpath() ? mode : "r"); 
+            _sdf.mkdir(pa.is_dir_path() ? pa.path() : pa.dir_name(), true); // no error check (mkdir fails if path exist)
+            return std::make_shared<SDFATFSFileImpl>(this, path, !pa.is_dir_path() ? mode : "r"); 
         }
         return FileImplPtr();
     }
@@ -82,8 +82,8 @@ size_t SDFATFSFileImpl::write(const uint8_t *buf, size_t size) {
 
 // set return value to zero in case of SdFat read error (-1)
 size_t SDFATFSFileImpl::read(uint8_t *buf, size_t size) {
-    size_t rc = _file.read(buf, size);
-    return ( rc == (size_t)-1 ) ? 0 : rc; 
+    int rc = _file.read(buf, size);
+    return ( rc == -1 ) ? 0 : (size_t)rc; 
 }
 
 void SDFATFSFileImpl::flush() {
@@ -126,7 +126,7 @@ const char *SDFATFSFileImpl::path() const {
 
 const char *SDFATFSFileImpl::name() const {
     //return getName(_file);    // If one asks the name of another file the same buffer will be used. So we assume here the name ptr is not kept.
-    return _pa.basename();
+    return _pa.base_name();
 }
 
 time_t SDFATFSFileImpl::getLastWrite() {

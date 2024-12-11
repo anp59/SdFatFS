@@ -8,7 +8,10 @@
 #if defined __has_include
 #if __has_include(<SD.h>)
 #warning please deactivate including of <SD.h>
-#else
+#endif
+#endif
+
+#ifndef sdcard_type_t
 typedef enum {
   CARD_NONE,
   CARD_MMC,
@@ -16,7 +19,6 @@ typedef enum {
   CARD_SDHC,
   CARD_UNKNOWN
 } sdcard_type_t;
-#endif
 #endif
 
 namespace fs

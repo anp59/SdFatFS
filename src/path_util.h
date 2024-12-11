@@ -2,14 +2,15 @@
 #include <string.h>
 
 /*
-* analyze():    Analyze path and split it into into head (the directory component of path) and tail (the name of file or dir).
+* analyze():    Analyze path and split it into into head (the directory component of path) 
+*               and tail  (the non-directory component, that means the name of file or dir).
 *               If parameter base is valid, base will be handled as basename and path as dirname. 
-*               The argument isdirbase can be used zu mark the base as directory instead of file.
+*               The argument is_dir_base can be used zu mark the base as directory instead of file.
 *               Returns false, if there any errors (refer operator bool())
-* path():       returns analyzed path or nullptr if there are any errors
-* dirname():    returns dirname of path (head) without trailing slash
-* basename():   returns basename of path (tail)   
-* isdirpath():  set to true, if the arguments path or base ends with a slash (slash will be deleted in analyze())
+* path():       return analyzed path or nullptr if there are any errors
+* dir_name():    return the directory portion of a pathname (head) without trailing slash
+* base_name():   return non-directory portion of a pathname (tail)   
+* is_dir_path():  set to true, if the arguments path or base ends with a slash (slash will be deleted in analyze())
 * operator bool(): returns false, if there were any errors in in analyzing path (missing slash at start or failed memory allocation)
 */
 class PathAnalyze
@@ -87,7 +88,7 @@ public:
             free(temp);
     }
 
-    const char* basename() const {
+    const char* base_name() const {
         return (status) ? temp + pos_slash + 1 : nullptr; 
     } 
   
@@ -99,7 +100,7 @@ public:
         return nullptr; 
     }
 
-    const char* dirname() const {
+    const char* dir_name() const {
         if (status) {
             if (pos_slash) temp[pos_slash] = '\0';
             return pos_slash ? temp : "/";
@@ -107,7 +108,7 @@ public:
         return nullptr;
     }
 
-    bool isdirpath() const { return dir_path; }
+    bool is_dir_path() const { return dir_path; }
 
     operator bool() const {
         return status;
