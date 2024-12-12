@@ -1,106 +1,92 @@
+
 #include <Arduino.h>
 #include "SD_SDFAT.h"
-#include "Audio.h"
+#include "Audio.h"  // Audio.h should included after SD_SDFAT to avoid compiler warnings
+#include "SdFatPlayList.h"
 
-#include <vector>
+// example tested with lib version from 13.12.2024!
 
-#define I2S_LRC     26
-#define I2S_DOUT    25
-#define I2S_BCLK    27
+#if CONFIG_IDF_TARGET_ESP32S3
+    #define I2S_BCLK    5   // GPIOs 5/6/7 are not wired to a pin, they are exclusively used for the MAX98357A
+    #define I2S_LRC     6
+    #define I2S_DOUT    7
+    SPIClass SD_SPI(FSPI);
+#endif
+
+#if CONFIG_IDF_TARGET_ESP32
+    #define I2S_LRC     26
+    #define I2S_DOUT    25
+    #define I2S_BCLK    27
+    SPIClass SD_SPI(VSPI);
+#endif
 
 Audio audio;
-std::vector<char*>  v_audioContent;
-bool play_next = true;
+SdFatPlayList plist;
+bool playNextFile(int offset = 1);
+bool f_eof = true;
 
-void listDir(fs::FS &fs, const char * dirname, uint8_t levels); 
-void vector_clear_and_shrink(vector<char*>&vec);
-bool playNext();
-File dir;
-const char audioDir[] = "/";  // directory to play
+const char *dir = "/";      // root dir for the playlist
+int subdirLevels = 10;      // subdirLevels = 0 : add only files from dir to playlist. 
+                            // subdirLevels > 0 : add files in dir files from all subdirs down to a depth of subdirLevels to the lis 
 
+/**************************************************/
 
 void setup() {
     Serial.begin(115200);
-    if ( !SDF.begin() ) {
-        Serial.println("Card Mount Failed");
+    if ( !SDF.begin(SdSpiConfig(SS, DEDICATED_SPI, SD_SCK_MHZ(25), &SD_SPI)) ) {
+        log_e("Card Mount failed!");
         return;
     }
-
+    
     audio.setPinout(I2S_BCLK, I2S_LRC, I2S_DOUT);
-    audio.setVolume(7); // 0...21 Will need to add a volume setting in the app
-    dir = SDF.open(audioDir);
-    listDir(SDF, audioDir, 1);
-}
+    audio.setVolume(4); // 0...21 Will need to add a volume setting in the app   
 
+    plist.setFileFilter( {"mp3", "ogg", "wav"} );
+    uint32_t start = millis();
+    uint32_t end = start;
+    plist.createPlayList(dir, subdirLevels);
+    end = millis()-start;
+    log_w("read %d dirs with %d files in %lu ms", plist.dirs.size(), plist.files.size(), end);
+    if (plist.files.empty()) {
+        log_e("No files in playlist!");
+        return;
+    }
+    f_eof = !playNextFile(0);   // play first file of playlist (index 0)
+}
 
 void loop() {
-    if (Serial.available()) {
-        Serial.readString(); 
-        audio.stopSong();
-        play_next = !playNext();
-    }
-    if (play_next) {
-        play_next = !playNext();
-    }
+    int offset = 1;
     audio.loop();
+    if (Serial.available()) {
+        String s = Serial.readString();     //SPACE -> next, ENTER -> repeat current song
+                                            // or input positive or negative offset numbers to navigate in playlist                       
+        if (s[0] != ' ')
+            offset = s.toInt();
+        audio.stopSong();
+        f_eof = true;
+    }
+    if (f_eof)
+        f_eof = !playNextFile(offset);
+    vTaskDelay(1);
 }
 
+/****************************************************/
 
-void listDir(fs::FS &fs, const char * dirname, uint8_t levels){
-    Serial.printf("Listing directory: %s\n", dirname);
-
-    File root = fs.open(dirname);
-    if(!root){
-        Serial.println("Failed to open directory");
-        return;
-    }
-    if(!root.isDirectory()){
-        Serial.println("Not a directory");
-        return;
-    }
-
-    File file = root.openNextFile();
-    while(file){
-        if(file.isDirectory()){
-            Serial.print("  DIR : ");
-            Serial.println(file.name());
-            if(levels){
-                listDir(fs, file.path(), levels -1);
+bool playNextFile(int offset) {
+    static int cur_pos = 0;
+    const char *file_path;
+    if ( plist.files.size() ) {
+        cur_pos = modulo(cur_pos += offset, plist.files.size());
+        if ( (file_path = plist.getFileAtIdx(cur_pos)) != nullptr ) {
+            if ( audio.connecttoFS(SDF, file_path) ) {
+                log_i("\n****   now playing at [%d]: %s", cur_pos, file_path);
+                return true;
             }
-        } else {
-            Serial.print("  FILE: ");
-            Serial.println(file.name());
-            v_audioContent.insert(v_audioContent.begin(), strdup(file.path()));
-        }
-        file = root.openNextFile();
-    }
-    Serial.printf("num files %i\n", v_audioContent.size());
-    root.close();
-    file.close();
-}
-
-void vector_clear_and_shrink(vector<char*>&vec){
-    uint size = vec.size();
-    for (int i = 0; i < size; i++) {
-        if(vec[i]){
-            free(vec[i]);
-            vec[i] = NULL;
+            else
+                log_e("connectToSD failed: %s\n", file_path);
         }
     }
-    vec.clear();
-    vec.shrink_to_fit();
-}
-
-bool playNext() {
-    bool rc = false;
-    if(v_audioContent.size() > 0) {
-        const char* s = (const char*)v_audioContent[v_audioContent.size() -1];
-        Serial.printf("playing %s\n", s);
-        play_next = false;
-        rc = audio.connecttoFS(SDF, s);
-        v_audioContent.pop_back();
-    }
-    return rc;
+    return false;
 }
 
 // optional
@@ -108,13 +94,9 @@ void audio_info(const char *info){
     Serial.print("info        "); Serial.println(info);
 }
 void audio_id3data(const char *info){  //id3 metadata
-    Serial.print("id3data     ");Serial.println(info);
+    // Serial.print("id3data     ");Serial.println(info);
 }
 void audio_eof_mp3(const char *info){  //end of file
     Serial.print("eof_mp3     ");Serial.println(info);
-    if(v_audioContent.size() == 0){
-        vector_clear_and_shrink(v_audioContent); // free memory
-        return;
-    }
-    play_next = true;
+    f_eof = true;
 }
