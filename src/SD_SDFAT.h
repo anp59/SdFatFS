@@ -1,16 +1,8 @@
 #pragma once
 
-#define DISABLE_FS_H_WARNING
 #include "FS.h"
 #include "SdFat.h"
 #include "sd_defines.h"
-
-// Line with test for __has_include must not have operators or parentheses.
-#if defined __has_include
-#if __has_include(<SD.h>)
-#warning please deactivate including of <SD.h>
-#endif
-#endif
 
 namespace fs {
 class SDFATFS : public FS

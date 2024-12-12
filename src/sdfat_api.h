@@ -1,6 +1,5 @@
 #pragma once
 
-#define DISABLE_FS_H_WARNING
 #include "FS.h"
 #include "FSImpl.h"
 #include "SdFat.h"
