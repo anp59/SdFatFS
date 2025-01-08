@@ -24,6 +24,8 @@ Audio audio;
 SdFatPlayList plist;
 bool playNextFile(int offset = 1);
 bool f_eof = true;
+const uint8_t volume_steps = 21;
+const uint8_t default_volume = 4;
 
 const char *dir = "/";      // root dir for the playlist
 int subdirLevels = 10;      // subdirLevels = 0 : add only files from dir to playlist. 
@@ -39,7 +41,8 @@ void setup() {
     }
     
     audio.setPinout(I2S_BCLK, I2S_LRC, I2S_DOUT);
-    audio.setVolume(4); // 0...21 Will need to add a volume setting in the app   
+    audio.setVolumeSteps(volume_steps);
+    audio.setVolume(default_volume); // 0...21 Will need to add a volume setting in the app
 
     plist.setFileFilter( {"mp3", "ogg", "wav"} );
     uint32_t start = millis();
@@ -55,18 +58,34 @@ void setup() {
 }
 
 void loop() {
-    int offset = 1;
+    int offset = 1;    
+    char c = 0;
+    static int cur_volume = default_volume;
+    
     audio.loop();
     if (Serial.available()) {
-        String s = Serial.readString();     //SPACE -> next, ENTER -> repeat current song
+        c = Serial.read();
+        if ( !(c == '<' || c == '>') ) {
+            String s(c);
+            s += Serial.readString();       //SPACE -> next, ENTER -> repeat current song
                                             // or input positive or negative offset numbers to navigate in playlist                       
-        if (s[0] != ' ')
-            offset = s.toInt();
-        audio.stopSong();
-        f_eof = true;
+            if (s[0] != ' ')
+                offset = s.toInt();
+            audio.stopSong();
+            f_eof = true;
+        }
     }
     if (f_eof)
         f_eof = !playNextFile(offset);
+
+    // volume control
+    if  ( c == '<' || c == '>') { 
+        cur_volume += (c == '>' ? 1 : -1);
+        if (cur_volume < 0) cur_volume = 0;
+        if (cur_volume > volume_steps) cur_volume = volume_steps; 
+        audio.setVolume(cur_volume);
+        log_i("Volume = %d", cur_volume);
+    }
     vTaskDelay(1);
 }
 
