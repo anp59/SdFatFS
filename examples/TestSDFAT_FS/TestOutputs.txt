@@ -1,0 +1,104 @@
+Outputs for all configurations
+================================================
+
+Note:
+Errors with USING MMC and USING SD occur in 'CreateDirWithOpen' due to the last slash in /mydir/open.dir/
+An execution without errors requires the FS-Library version 3.0.0 or higher (with Arduino 3.x)
+
+---------------------------------------------------------
+** USING SDFATFS **
+SD Card Type: SDHC
+SD Card Size: 30419MB
+listDir...
+  listDir with SDFAT_FS takes 3751 ms for 1872 files in 111 /dirs
+
+Original SdFat will be used...
+  listDir_SdFat...
+    listDir with SdFat takes 2557 ms for 1872 files in 111 /dirs
+  playlist.listDir...
+    listDir with SdFat and playlist takes 1768 ms for 1872 files in 111 /dirs
+
+Creating Dir: /mydir
+  Dir created
+CreateDirWithOpen: path: /mydir/open.dir/
+  path '/mydir/open.dir/' is created as dir
+  dir '/mydir/open.dir/' was removed
+Removing Dir: /mydir
+  Dir removed
+Writing file: /hello.txt
+  File written
+Appending to file: /hello.txt
+  Message appended
+Reading file: /hello.txt
+  Read from file: Hello World!
+Deleting file: /foo.txt
+  File deleted
+Renaming file /hello.txt to /foo.txt
+  File renamed
+Reading file: /foo.txt
+  Read from file: Hello World!
+TestFileIO file: /test.txt
+  1048576 bytes read for 1862 ms
+  1048576 bytes written for 1870 ms
+**** READY ****
+---------------------------------------------------------
+** USING SD_MMC **
+SD Card Type: SDHC
+SD Card Size: 30436MB
+listDir...
+listDir with SD_MMC takes 50506 ms for 1872 files in 113 /dirs
+
+Creating Dir: /mydir
+  Dir created
+CreateDirWithOpen: path: /mydir/open.dir/
+[ 51046][E][vfs_api.cpp:332] VFSFileImpl(): fopen(/sdmmc/mydir/open.dir/) failed
+  open / creation failed
+Removing Dir: /mydir
+  rmdir failed
+Writing file: /hello.txt
+  File written
+Appending to file: /hello.txt
+  Message appended
+Reading file: /hello.txt
+  Read from file: Hello World!
+Deleting file: /foo.txt
+  File deleted
+Renaming file /hello.txt to /foo.txt
+  File renamed
+Reading file: /foo.txt
+  Read from file: Hello World!
+TestFileIO file: /test.txt
+  1048576 bytes read for 313 ms
+  1048576 bytes written for 485 ms
+**** READY ****
+---------------------------------------------------------
+** USING SD **
+SD Card Type: SDHC
+SD Card Size: 30436MB
+listDir...
+listDir with SD takes 72613 ms for 1872 files in 111 /dirs
+
+Creating Dir: /mydir
+  Dir created
+CreateDirWithOpen: path: /mydir/open.dir/
+[ 73101][E][vfs_api.cpp:332] VFSFileImpl(): fopen(/sd/mydir/open.dir/) failed
+  open / creation failed
+Removing Dir: /mydir
+  rmdir failed
+Writing file: /hello.txt
+  File written
+Appending to file: /hello.txt
+  Message appended
+Reading file: /hello.txt
+  Read from file: Hello World!
+Deleting file: /foo.txt
+  File deleted
+Renaming file /hello.txt to /foo.txt
+  File renamed
+Reading file: /foo.txt
+  Read from file: Hello World!
+TestFileIO file: /test.txt
+  1048576 bytes read for 678 ms
+  1048576 bytes written for 722 ms
+**** READY ****
+ 
