@@ -26,7 +26,7 @@
     (https://github.com/yellobyte/ESP32-DevBoards-Getting-Started/tree/main/boards/YB-ESP32-S3-AMP)
     the solder bridge SD_CS must be closed [default].
 
-    Last updated 2025-01-10, anp59
+    Last updated 2025-04-22, anp59
     Example was tested with the last lib versions
 */
 
