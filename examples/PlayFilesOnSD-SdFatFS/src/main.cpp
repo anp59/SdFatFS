@@ -10,14 +10,14 @@
 
     Using the SdFat library allows you to use only the so-called directory index instead of the file names 
     of the files (short int for FAT32). This allows the time required to create of the playlist 
-    can be considerably shortened (e.g. 1715 ms for 1710 files in 75 directories). 
+    can be considerably shortened (tested with 1774 files in 80 directories: 2080 ms). 
     The internal structure of the playlist also allows each directory path to be saved only once.
 
     The terminal can be used to navigate through the playlist and control the playback volume.
     The control commands via terminal are:
         Space bar -> next song
-        Enter key -> repeat current song
-        Decimal number -> offset to next song (positive value: forwards - negative value: backwards)
+        Enter/Return key -> repeat current song
+        Entering a decimal number -> set offset to next song (positive value: forwards - negative value: backwards)
         '<' Volume down
         '>' Volume up
 
@@ -26,7 +26,7 @@
     (https://github.com/yellobyte/ESP32-DevBoards-Getting-Started/tree/main/boards/YB-ESP32-S3-AMP)
     the solder bridge SD_CS must be closed [default].
 
-    Last updated 2025-04-22, anp59
+    Last updated 2025-06-02, anp59
     Example was tested with the last lib versions
 */
 
@@ -39,14 +39,14 @@
     #define I2S_BCLK    5   // YB-ESP32-S3-AMP: GPIOs 5/6/7 are not wired to a pin, they are exclusively used for the MAX98357A
     #define I2S_LRC     6
     #define I2S_DOUT    7
-    SPIClass SD_SPI(FSPI);
+    SPIClass SD_SPI(FSPI);  // GPIOs: MOSI=11, CLK=12, MISO=13, CS=10
 #endif
 
 #if CONFIG_IDF_TARGET_ESP32
     #define I2S_LRC     26
     #define I2S_DOUT    25
     #define I2S_BCLK    27
-    SPIClass SD_SPI(VSPI);
+    SPIClass SD_SPI(VSPI);  // GPIOs: MOSI=23, CLK=18, MISO=19, CS=5
 #endif
 
 Audio audio;
@@ -73,7 +73,7 @@ void setup() {
     audio.setVolumeSteps(volume_steps);
     audio.setVolume(default_volume); // 0...21 Will need to add a volume setting in the app
 
-    plist.setFileFilter( {"mp3", "ogg", "wav"} );   // optional list consist of the  extensions of files to be considered for the playlist. Empty list = all files 
+    plist.setFileFilter( {"mp3", "ogg", "wav"} );   // optional list consist of the  extensions of files to be considered for the playlist. Empty list = all file types 
     uint32_t start = millis();
     uint32_t end = start;
     plist.createPlayList(dir, subdirLevels);

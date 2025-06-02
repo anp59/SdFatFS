@@ -5,19 +5,21 @@ int modulo(int a, int b) {
 }
 
 bool fileFilter::operator()(File32& file) const {
+    const char *p;
     char short_fn[13]; 
-    const char *p;    
     int len;
-    if (v_ext.empty()) 
-        return true; 
-    // the filefilter uses short filenames: only the first 3 characters of file extension will be tested
-    len = file.getSFN(short_fn, sizeof(short_fn));
-    while (len)
-        if (short_fn[--len] == '.') {
-        p = short_fn + len + 1;
-        for ( String ext : v_ext ) {
-            if ( strcasecmp(p, ext.c_str()) == 0) 
-                return true;
+    if ( file ) {
+        if (v_ext.empty()) 
+            return true; 
+        // the filefilter uses short filenames: only the first 3 characters of file extension will be tested
+        len = file.getSFN(short_fn, sizeof(short_fn));
+        while (len)
+            if (short_fn[--len] == '.') {
+            p = short_fn + len + 1;
+            for ( const char *ext : v_ext ) {
+                if ( strncasecmp(p, ext, 3) == 0) 
+                    return true;
+            }
         }
     }
     return false;

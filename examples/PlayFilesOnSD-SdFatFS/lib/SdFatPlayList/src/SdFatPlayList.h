@@ -10,18 +10,15 @@
 int modulo(int a, int b); 
 
 class fileFilter {
-    std::vector<String> v_ext;
+    std::vector<const char*> v_ext;
 public:
         fileFilter() { init( {} ); }
         void init(const std::initializer_list<const char*> iLst) {
         v_ext.clear();
         v_ext.reserve(iLst.size());
-        for ( auto e : iLst) {
-            v_ext.emplace_back(e);
-            if ( v_ext.back().length() > 3 )
-                v_ext.back().setCharAt(3, 0);
-        }
+        v_ext = iLst; 
     }
+
     bool operator()(File32& file) const;  
 };
 
