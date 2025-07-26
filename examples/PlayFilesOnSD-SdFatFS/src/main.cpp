@@ -10,7 +10,7 @@
 
     Using the SdFat library allows you to use only the so-called directory index instead of the file names 
     of the files (short int for FAT32). This allows the time required to create of the playlist 
-    can be considerably shortened (tested with 1774 files in 80 directories: 2080 ms). 
+    can be considerably shortened: Read 80 dirs with 1774 files in 617 ms (tested with 50 MHz SPI_CLK) 
     The internal structure of the playlist also allows each directory path to be saved only once.
 
     The terminal can be used to navigate through the playlist and control the playback volume.
@@ -26,7 +26,7 @@
     (https://github.com/yellobyte/ESP32-DevBoards-Getting-Started/tree/main/boards/YB-ESP32-S3-AMP)
     the solder bridge SD_CS must be closed [default].
 
-    Last updated 2025-06-02, anp59
+    Last updated 2025-07-26, anp59
     Example was tested with the last lib versions
 */
 
@@ -64,7 +64,8 @@ int subdirLevels = 10;      // subdirLevels = 0 : add only files from dir to pla
 
 void setup() {
     Serial.begin(115200);
-    if ( !SDF.begin(SdSpiConfig(SS, DEDICATED_SPI, SD_SCK_MHZ(25), &SD_SPI)) ) {
+    // SPI CLK 50 MHZ was successfully tested with the YB-ESP32-S3 AMP board from yellobyte. If problems occur, the CLK frequency should be reduced to 25 or 16 MHz.
+    if ( !SDF.begin(SdSpiConfig(SS, DEDICATED_SPI, SD_SCK_MHZ(50), &SD_SPI)) ) {
         log_e("Card Mount failed!");
         return;
     }
