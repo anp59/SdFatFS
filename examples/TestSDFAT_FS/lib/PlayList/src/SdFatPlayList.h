@@ -12,7 +12,7 @@
 #define SAVE_FNAMES 0
 
 class SdFatPlayList {
-    public:
+    private:
     struct dir_t {
         dir_t(const char *p) : path(p) {}
         String path;
@@ -35,14 +35,18 @@ class SdFatPlayList {
     File32 cur_dir;
     File32 cur_dirfile;
     String cur_path;
+    bool ignoreSpecialDirFiles;
+    bool ignoreEmptyPaths;
     const char* name(File32& f, bool add_dirslash = false);
-
+    int scan(const char *path, uint8_t levels);
       
-    
     public:
-    SdFatPlayList() {}
-    int create(const char *path, uint8_t levels = 0);
-    const char* getFilePathAtIdx(size_t idx);
-    size_t size() {return files.size(); }
+        SdFatPlayList() : ignoreSpecialDirFiles(true), ignoreEmptyPaths(true) {}
+        int create(const char *path, uint8_t levels = 0);
+        const char* getFilePathAtIdx(size_t idx);
+        size_t fileCount() {return files.size(); }
+        size_t dirCount() {return dirs.size(); }
+        void ignoreSystemAndHiddenFiles(bool val=true) { ignoreSpecialDirFiles = val; } 
+        void ignoreEmptyDirPaths(bool val=true) { ignoreEmptyPaths = val; }
 };
 

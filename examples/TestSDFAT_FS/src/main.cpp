@@ -41,55 +41,54 @@
 /* 
 In this example, the compatibility of the two file system wrappers SDFAT_FS (for SdFat) 
 and FS (for Arduino's own file systems) is tested. 
-By setting the two defines USE_SDFATFS and USE_SDMMC, the performance values of the three
+By setting one of the three TEST_CASE 1, 2 or 3, the performance values of the three
 file systems SdFat, SD and SD_MMC can also be compared:
 
-            USE_SDFATFSUSE  USE_SD_MMC
-                SD  | SD_MMC |  SdFat
---------------------+---------+---------                
-USE_SDFATFS:    0   |  0     |   1      
-USE_SD_MMC:     0   |  1     |   0
+The examples was tested with a ESP32S3-devKit-C1-Board respectively an YB-ESP32S3 AMP-board and arduinoespressif32 V3.2.1
 
-The example was tested with an ESP32S3-DevBoard respectively an YB-ESP32S3 AMP-board and arduinoespressif32 V3.2.1
-
+!! When switching between SPI-mode (SDFATFS or SD) and MMC-mode (TEST_SD_MMC), operating voltage from SD module has to be disconnected !!
 */
 
-// !! when switching between SPI-mode (USE_SDFATFS) and MMC-mode (USE_SD_MMC), operating voltage from SD module has to be disconnected !!
-#define    USE_SDFATFS 1
-#if !USE_SDFATFS
-    #define USE_SD_MMC 0
-#else
-    // USE_SD: set USE_SDFATFS == 0,  USE_SD_MMC == 0 
+// ##########  Test selection  ##################
+// set TEST_CASE to     1   -> test SDFATFS
+//                      2   --> test SD_MMC
+//                      3   --> test SD
+#define TEST_CASE   1           
+
+// An additional PlayList class was implemented for SDFatFS. The content from a specific directory is read in and stored internally. 
+// The listDir method can be used to output this data in a similar way to listDir. This test can be activated with TEST_PLAYLIST = 1.
+#define TEST_PLAYLIST   1 
+#define LIST_PLAYLIST   0     // prints all files (complete file path) of the playlist
+// ###############################################
+
+
+#if (TEST_CASE > 3) || (TEST_CASE < 1) 
+    #undef TEST_CASE
+    #define TEST_CASE 1
+    #warning TEST_CASE was set to 1 per default! Please select the test you want. 
 #endif
 
-/* An additional PlayList class was implemented for SDFatFS. The content from a specific directory is read in and stored internally. 
- * The listDir method can be used to output this data in a similar way to listDir. This test can be activated with TEST_PLAYLIST = 1.
-*/
-#define TEST_PLAYLIST 1 
-
-#define LIST_PLAYLIST 0     // all files (complete file path) of the playlist will be printed
-
-//##########################################################################################################
-
-#if USE_SDFATFS
+#if TEST_CASE == 1
     #include "SD_SDFAT.h"
-    #include "SdFat.h"
     #include "SdFatPlayList.h"
-
-    #define SD SDF        
-    SdFatPlayList plist;
-#else
-    #if USE_SD_MMC
-        #include "SD_MMC.h"
-        #define SD SD_MMC
-    #else
-        #include "SD.h"
+    #define SD SDF
+    #define TEST_NAME "Test SDFatFS"
+    #if TEST_PLAYLIST        
+        SdFatPlayList plist;
     #endif
+#elif TEST_CASE == 2
+    #include "SD_MMC.h"   
     #include "FS.h"
+    #define SD SD_MMC
+    #define TEST_NAME "Test SD_MMC"
+#elif TEST_CASE == 3
+    #include "SD.h"
+    #include "FS.h"
+    #define TEST_NAME "Test SD"
 #endif
 
 #if CONFIG_IDF_TARGET_ESP32S3
-    #if USE_SD_MMC    
+    #if TEST_CASE == 2    
         #define SD_MMC_D0   13       // miso
         #define SD_MMC_CLK  12      // clk 
         #define SD_MMC_CMD  11      // mosi
@@ -99,7 +98,7 @@ The example was tested with an ESP32S3-DevBoard respectively an YB-ESP32S3 AMP-b
 #endif
 
 #if CONFIG_IDF_TARGET_ESP32
-    #if USE_SD_MMC    
+    #if TEST_CASE == 2    
         #define SD_MMC_D0   2       // miso
         #define SD_MMC_CLK  14      // clk 
         #define SD_MMC_CMD  15      // mosi
@@ -108,22 +107,21 @@ The example was tested with an ESP32S3-DevBoard respectively an YB-ESP32S3 AMP-b
     #endif
 #endif
 
+
 // global variables
+
 const char *rootDir = "/";	// rootDir for listDir... 
 uint8_t levels = 10;		// scan depth (0: only rootDir)
-bool printData = false;		// true: prints all files in listDir...
 
 typedef struct {
     uint16_t dcount;    // dirs counter   
     uint16_t fcount;    // files counter
 } list_count_t;
 
+
 // function prototypes
-#if USE_SDFATFS
-// const char* _name(File32& f, const char *path = nullptr);   // needed for listDir_SdFat, returns path + '/' + name of f 
-// void listDir_SdFat(fs::FS &fs, const char * dirname, uint8_t levels, list_count_t& lc, bool list_hidden_files = true);
-#endif
-void listDir(fs::FS &fs, const char *dirname, uint8_t levels, list_count_t& lc, bool ignore_hidden_files = true);
+
+void listDir(fs::FS &fs, const char *dirname, uint8_t levels, list_count_t& lc);
 void createDir(fs::FS &fs, const char *path);
 void removeDir(fs::FS &fs, const char *path);
 void readFile(fs::FS &fs, const char *path);
@@ -136,7 +134,8 @@ void testDir(fs::FS &fs, const char *path);
 void createDirWithOpen(fs::FS &fs, const char *path);
 void printCardType(sdcard_type_t cardType);
 
-/***********************************************************************************************/
+
+/*********************************  SETUP  **************************************************************/
 
 void setup() {
     Serial.begin(115200);
@@ -144,74 +143,72 @@ void setup() {
         delay(10);
     Serial.println();
 
-#if USE_SDFATFS
+    Serial.printf("\n******* %s *******\n", TEST_NAME);
+#if TEST_CASE == 1
     // SPI CLK 50 MHZ was successfully tested with the YB-ESP32-S3 AMP board from yellobyte. If problems occur, the CLK frequency should be reduced to 25 or 16 MHz.
-    #define SD_CONFIG SdSpiConfig(SS, DEDICATED_SPI, SD_SCK_MHZ(25), &SD_SPI)
-    Serial.println("\n** USING SDFATFS **");
+    #define SD_CONFIG SdSpiConfig(SS, DEDICATED_SPI, SD_SCK_MHZ(40), &SD_SPI)
     if (!SD.begin(SD_CONFIG)) {
         Serial.println("Card Mount Failed");
         return;
     }
-#else    
-    #if USE_SD_MMC
-        SD_MMC.setPins(SCK, MOSI, MISO);
-        // const char *mountpoint = "/sdcard", bool mode1bit = false, bool format_if_mount_failed = false, int sdmmc_frequency = BOARD_MAX_SDMMC_FREQ /*!kHz*/, uint8_t maxOpenFiles = 5
-        // SDMMC_FREQ_52M -> max 52 MHz
-        Serial.println("\n** USING SD_MMC **");
-        if(!SD_MMC.begin( "/sdmmc", true)) {
-            Serial.println("Card Mount Failed");
-            return;
-        }
-    #else   	
+#elif TEST_CASE == 2
+    SD.setPins(SD_MMC_CLK, SD_MMC_CMD, SD_MMC_D0);
+    // const char *mountpoint = "/sdcard", bool mode1bit = false, bool format_if_mount_failed = false, int sdmmc_frequency = BOARD_MAX_SDMMC_FREQ /*!kHz*/, uint8_t maxOpenFiles = 5
+    // SDMMC_FREQ_52M -> max 52 MHz
+    if(!SD.begin( "/sdmmc", true)) {
+        Serial.println("Card Mount Failed");
+        return;
+    }
+#elif TEST_CASE == 3  	
         // bool begin(uint8_t ssPin = (uint8_t)10U, SPIClass &spi = SPI, uint32_t frequency = 4000000U, const char *mountpoint = "/sd", uint8_t max_files = (uint8_t)5U, bool format_if_empty = false)
-        Serial.println("\n** USING SD **");
         //if (!SD.begin()) {
-        if (!SD.begin(SS, SPI, 25000000U, "/sd", 20)) { // setup with max SPI frequency  
+        if (!SD.begin(SS, SPI, 40 * 1000000, "/sd", 20)) { // setup with max SPI frequency  
             Serial.println("Card Mount Failed");
             return;
         }
-    #endif
+#else
+        Serial.println("No Test selected!");
+        return;
 #endif
    
-    printCardType(SD.cardType());
+// ************* START Test *****************
     
+printCardType(SD.cardType());
     uint64_t cardSize = SD.cardSize() / (1024 * 1024);
-    // Serial.printf("sd Card Size: %llu MB\n", cardSize);   // %llu can not used if SDK Configuration had 'CONFIG_NEWLIB_NANO_FORMAT=y'
+    // Serial.printf("\nSD Card Size: %llu MB\n", cardSize);   // %llu can not used if SDK Configuration had 'CONFIG_NEWLIB_NANO_FORMAT=y'
     Serial.printf("SD Card Size: %luMB\n", (uint32_t)cardSize);
-    Serial.println("\nlistDir (standardized function for SdFatFS, SD_MMC and SD) will be used ...");   
-    Serial.println("  listDir...");    
-    list_count_t lcnt, lcnt1, lcnt2;    
+    
+    Serial.println("Test listDir...");    
+    list_count_t lcnt;    
     uint32_t start = millis();
-    uint32_t end1 = start;
+    uint32_t end = start;
     lcnt.dcount = lcnt.fcount = 0;
     listDir(SD, rootDir, levels, lcnt);
-    end1 = millis() - start;
-    #if USE_SD_MMC
-      Serial.printf("listDir with SD_MMC takes %lu ms for %u files in %u /dirs\n", end1, lcnt.fcount, lcnt.dcount);
-    #else
-        #if USE_SDFATFS
-            Serial.printf("    listDir with SDFAT_FS takes %lu ms for %u files in %u /dirs\n", end1, lcnt.fcount, lcnt.dcount);
-        #else
-            Serial.printf("listDir with SD takes %lu ms for %u files in %u /dirs\n", end1, lcnt.fcount, lcnt.dcount);
-        #endif
-    #endif
-
-#if (USE_SDFATFS && TEST_PLAYLIST)
-    Serial.println("\nA playlist implmentation, based on SdFatFS will be used ...");    
-    Serial.println("  playlist.create (building playlist) ...");
+    end = millis() - start;
+    Serial.printf("  processing listDir for %s takes %lu ms for %u files in %u /dirs\n", TEST_NAME, end, lcnt.fcount, lcnt.dcount);
+    
+#if (TEST_CASE == 1 && TEST_PLAYLIST)
+    Serial.println("Test building playlist, based on SdFatFS ...");    
     start = millis();
-    uint32_t end3 = start;
-    plist.files.clear();
-    lcnt2.fcount = plist.create(rootDir, levels);
-    end3 = millis() - start;
+    end = start;
+    // With SDFat it is possible to evaluate the “system” and “hidden” attributes of files and directories. 
+    // These are ignored by default when the playlist is created. 
+    // This can be switched off to obtain the same results as in listDir. 
+    plist.ignoreSystemAndHiddenFiles(false);
+    // Directories without files (including their subdirectories) are not saved in the playlist by default.
+    // This can be switched off to obtain the same results as in listDir. 
+    plist.ignoreEmptyDirPaths(false);
+    plist.create(rootDir, levels);
+    end = millis() - start;
+    
     #if LIST_PLAYLIST
-        Serial.printf("\n*************  List %d Files of the playlist ************\n");
-        for (size_t i = 0; i < plist.size(); i++)
+        Serial.printf("\n*************  List %d Files of the playlist ************\n", plist.fileCount());
+        for (size_t i = 0; i < plist.fileCount(); i++)
             Serial.printf("%05u: %s\n", i, plist.getFilePathAtIdx(i));
         Serial.println();
     #endif
     
-    Serial.printf("    plist.create takes %lu ms for %u files in %u /dirs\n", end3, plist.files.size(), plist.dirs.size()); 
+    Serial.printf("  creating playlist takes %lu ms for %u files in %u /dirs\n", end, plist.fileCount(), plist.dirCount()); 
 #endif
 
 
@@ -228,95 +225,24 @@ Serial.println();
     renameFile(SD, "/hello.txt", "/foo.txt");
     readFile(SD, "/foo.txt");
     testFileIO(SD, "/test.txt");
+    //optional:
+    //testDir(SD, "/");
     
     //Delete the comment chars if needed:
-
     //testDir(SD, "/");       // shows timestamp lastWrite for all files in root.
     // Serial.printf("Total space: %luMB\n", SD.totalBytes() / (1024 * 1024));
     // Serial.printf("Used space: %luMB\n", SD.usedBytes() / (1024 * 1024));
     Serial.println("**** READY ****");
 }
 
+/*********************************  LOOP  **************************************************************/
 void loop() {}
 
-//######################################################################
 
-// #if USE_SDFATFS
-// const char* _name(File32& f, const char *path) {
-//     static char m_path[512];
-//     int i = 0;
-//     if ( path ) {
-//         if ( (i = strlen(path)) < sizeof(m_path)-1 ) {
-//             strcpy(m_path, path);
-//             if (m_path[i-1] != '/') {
-//                 m_path[i] = '/';
-//                 if ( !(i == 1 && m_path[0] == '/') )    // not root (/) 
-//                     m_path[i++] = '/';
-//             }
-//         }
-//     }
-//     f.getName(m_path+i, sizeof(m_path)-i);
-//     return (const char*)m_path;
-// }
 
-// void listDir_SdFat(fs::FS &fs, const char * dirname, uint8_t levels, list_count_t& lc, bool list_hidden_files) {
-//     char path[256];
-//     int len = 0;
-//     File32 root;
-//     int mode = 2;
+//#######################################################################################################
 
-//     strcpy(path, dirname); 
-//     len = strlen(path);
-//     if ( !(len == 1 && path[0] == '/') )    // not root (/) 
-//         path[len++] = '/';                  // without final \0
-
-//     root.open(dirname);
-//     if (!root) {
-//         Serial.println("Failed to open directory");
-//         return;
-//     }
-//     if (!root.isDir()) {
-//         Serial.println("Not a directory");
-//         return;
-//     }
-//     if (printData)
-//         Serial.printf("Scan directory(%d): %s\n", lc.dcount, dirname);
-//     lc.dcount++;
-//     while (true) {
-//         File32 file;
-//         file.openNext(&root, O_RDONLY);
-//         while (file) {
-//             if (file.isDir() && (!file.isHidden() || list_hidden_files)  && mode == 1) {
-//                 if (levels) {
-//                     strcpy(path+len, _name(file));
-//                     listDir_SdFat(fs, path, levels - 1, lc, true);
-//                 }
-//             }
-//             if (!file.isDir()  && (!file.isHidden() || list_hidden_files) && mode == 2) {
-//                 lc.fcount++;
-//                 #if SAVE_FNAMES
-//                     plist.files.emplace_back(0, 0, _name(file, dirname));
-//                 #else
-//                     plist.files.emplace_back(0, file.dirIndex());
-//                 #endif
-//                 //Serial.printf("(%d)  FILE: %s\n", lc.fcount, _name(file, dirname));
-//                 //Serial.printf("  SIZE: %d\n",file.size());
-//             }
-//             file.close();
-//             file.openNext(&root);
-//         }
-
-//         mode--;
-//         if (!mode) {
-//             root.close();
-//             break;
-//         }
-//         root.rewind();
-//     }
-// }
-// #endif
-
-void listDir(fs::FS &fs, const char *dirname, uint8_t levels, list_count_t& lc, bool ignore_hidden_files) {
+void listDir(fs::FS &fs, const char *dirname, uint8_t levels, list_count_t& lc) {
     File root = fs.open(dirname);
     if (!root) {
         Serial.println("Failed to open directory");
@@ -326,34 +252,24 @@ void listDir(fs::FS &fs, const char *dirname, uint8_t levels, list_count_t& lc, 
         Serial.println("Not a directory");
         return;
     }
-    if (printData)
-        Serial.printf("Scan directory(%d): %s\n", lc.dcount, dirname);
+    //Serial.printf("Scan directory(%03d): %s\n", lc.dcount, dirname);
     lc.dcount++;
     File file = root.openNextFile();
     while (file) {
         if (file.isDirectory()) {
-            //Serial.printf("  DIR : %s\n",file.name());
+            // Serial.printf("  DIR : %s\n",file.name());
             if (levels) {
-                listDir(fs, file.path(), levels - 1, lc, ignore_hidden_files);
+                listDir(fs, file.path(), levels - 1, lc);
             }
         }
         else {
-            //Serial.printf("  FILE: %s\n",);
-
             lc.fcount++;
-            #if USE_SDFATFS
-            #if SAVE_FNAMES
-                plist.files.emplace_back(0, 0, file.name());
-            #else
-                plist.files.emplace_back(0, 0);
-            #endif 
-            #endif
-            //Serial.printf("(%d)  FILE: %s\n", lc.fcount, file.name());
-            //Serial.printf("  SIZE: %d\n",file.size());
+            //Serial.printf("  FILE (%04d): %s\n", lc.fcount, file.name());
         }
         file = root.openNextFile();
     }
 }
+
 
 void createDir(fs::FS &fs, const char *path) {
     Serial.printf("Creating Dir: %s\n", path);
@@ -365,6 +281,7 @@ void createDir(fs::FS &fs, const char *path) {
     }
 }
 
+
 void removeDir(fs::FS &fs, const char *path) {
     Serial.printf("Removing Dir: %s\n", path);
     if (fs.rmdir(path)) {
@@ -374,6 +291,7 @@ void removeDir(fs::FS &fs, const char *path) {
         Serial.println("  rmdir failed");
     }
 }
+
 
 void readFile(fs::FS &fs, const char *path) {
     Serial.printf("Reading file: %s\n", path);
@@ -390,6 +308,7 @@ void readFile(fs::FS &fs, const char *path) {
     }
     file.close();
 }
+
 
 void writeFile(fs::FS &fs, const char *path, const char *message) {
     Serial.printf("Writing file: %s\n", path);
@@ -408,6 +327,7 @@ void writeFile(fs::FS &fs, const char *path, const char *message) {
     file.close();
 }
 
+
 void appendFile(fs::FS &fs, const char *path, const char *message) {
     Serial.printf("Appending to file: %s\n", path);
 
@@ -424,6 +344,7 @@ void appendFile(fs::FS &fs, const char *path, const char *message) {
     }
     file.close();
 }
+
 
 void renameFile(fs::FS &fs, const char *path1, const char *path2) {
     Serial.printf("Renaming file %s to %s\n", path1, path2);
@@ -444,6 +365,7 @@ void deleteFile(fs::FS &fs, const char *path) {
         Serial.println("  Delete failed");
     }
 }
+
 
 void testFileIO(fs::FS &fs, const char *path) {
     Serial.printf("TestFileIO file: %s\n", path);
@@ -488,20 +410,20 @@ void testFileIO(fs::FS &fs, const char *path) {
     file.close();
 }
 
+
 void testDir(fs::FS &fs, const char *path) {
     File f;
     if (f = fs.open(path)) {
-        Serial.printf("\n **** testDir '%s', isDirectory()= %d\n", f.path(), f.isDirectory());
+        Serial.printf("\nTestDir '%s', isDirectory()= %d\n", f.path(), f.isDirectory());
         f.rewindDirectory();
-
-        Serial.println("\n+++++ getNextFileName ++++++");
+        Serial.println("  ---> test getNextFileName()...");
         String filename;
         bool dir;
         while ((filename = f.getNextFileName(&dir)) != "") {
-            Serial.printf("%s%s\n", dir ? "DIR:   " : "FILE:  ", filename.c_str());
+            Serial.printf("    %s%s\n", dir ? "DIR:   " : "FILE:  ", filename.c_str());
         }
 
-        Serial.println("\n+++++ openNextFile ++++++");
+        Serial.println("  ---> test openNextFile()...");
         f.rewindDirectory();
         File f1;
         // set timezone
@@ -510,14 +432,14 @@ void testDir(fs::FS &fs, const char *path) {
         while (1) {
             f1 = f.openNextFile();
             if (f1) {
-                Serial.printf("%s, Size: %d  -", f1.path(), f1.size());
+                Serial.printf("%s\n\tSize: %08u byte", f1.path(), f1.size());
 
                 time_t t = f1.getLastWrite();
                 struct tm *tmstruct = localtime(&t);
 
-                Serial.printf("  LAST WRITE: %d-%02d-%02d %02d:%02d:%02d   /   ", (tmstruct->tm_year) + 1900, (tmstruct->tm_mon) + 1, tmstruct->tm_mday,
+                Serial.printf("\tLAST WRITE: %d-%02d-%02d %02d:%02d:%02d", (tmstruct->tm_year) + 1900, (tmstruct->tm_mon) + 1, tmstruct->tm_mday,
                               tmstruct->tm_hour, tmstruct->tm_min, tmstruct->tm_sec);
-                Serial.printf("ctime(): %s", ctime(&t));
+                Serial.printf("\tctime(): %s", ctime(&t));
                 f1.close();
             }
             else {
@@ -530,6 +452,7 @@ void testDir(fs::FS &fs, const char *path) {
     else
         Serial.println("testDir() - open failed");
 }
+
 
 void createDirWithOpen(fs::FS &fs, const char *path) {
     Serial.printf("CreateDirWithOpen: path: %s\n", path);
@@ -549,6 +472,7 @@ void createDirWithOpen(fs::FS &fs, const char *path) {
         Serial.printf("  open / creation failed\n");
     f.close();
 }
+
 
 void printCardType(sdcard_type_t cardType) {
         if (cardType == CARD_NONE) {

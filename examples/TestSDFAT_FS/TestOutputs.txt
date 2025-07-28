@@ -1,25 +1,21 @@
-Outputs for all configurations
+Outputs of all TEST_CASEs 
 ================================================
 
 Note:
 Errors with USING MMC and USING SD occur in 'CreateDirWithOpen' due to the last slash in /mydir/open.dir/
 An execution without errors requires the FS-Library version 3.0.0 or higher (with Arduino 3.x)
 
+##################################################################################
 
----------------------------------------------------------
-SPI-Frequency = 25 MHz, USE_SPI_ARRAY_TRANSFER = 0
+SPI-Frequency = 40 MHz, USE_SPI_ARRAY_TRANSFER = 1
 
-** USING SDFATFS **
+******* Test SDFatFS *******
 SD Card Type: SDHC
 SD Card Size: 30419MB
-
-listDir (standardized function for SdFatFS, SD_MMC and SD) will be used ...
-  listDir...
-    listDir with SDFAT_FS takes 4266 ms for 2038 files in 119 /dirs
-
-A playlist implmentation, based on SdFatFS will be used ...
-  playlist.create (building playlist) ...
-    plist.create takes 2088 ms for 1941 files in 85 /dirs
+Test listDir...
+  processing listDir for Test SDFatFS takes 1413 ms for 2002 files in 118 /dirs
+Test building playlist, based on SdFatFS ...
+  creating playlist takes 626 ms for 2002 files in 118 /dirs
 
 Creating Dir: /mydir
   Dir created
@@ -41,23 +37,20 @@ Renaming file /hello.txt to /foo.txt
 Reading file: /foo.txt
   Read from file: Hello World!
 TestFileIO file: /test.txt
-  1048576 bytes read for 1869 ms
-  1048576 bytes written for 1850 ms
+  1048576 bytes read for 302 ms
+  1048576 bytes written for 310 ms
 **** READY ****
-
 ---------------------------------------------------------
-SPI-Frequency = 50 MHz, USE_SPI_ARRAY_TRANSFER = 0
-** USING SDFATFS **
+
+SPI-Frequency = 40 MHz, USE_SPI_ARRAY_TRANSFER = 0
+
+******* Test SDFatFS *******
 SD Card Type: SDHC
 SD Card Size: 30419MB
-
-listDir (standardized function for SdFatFS, SD_MMC and SD) will be used ...
-  listDir...
-    listDir with SDFAT_FS takes 3755 ms for 2038 files in 119 /dirs
-
-A playlist implmentation, based on SdFatFS will be used ...
-  playlist.create (building playlist) ...
-    plist.create takes 1830 ms for 1941 files in 85 /dirs
+Test listDir...
+  processing listDir for Test SDFatFS takes 3706 ms for 2002 files in 118 /dirs
+Test building playlist, based on SdFatFS ...
+  creating playlist takes 1857 ms for 2002 files in 118 /dirs
 
 Creating Dir: /mydir
   Dir created
@@ -80,129 +73,18 @@ Reading file: /foo.txt
   Read from file: Hello World!
 TestFileIO file: /test.txt
   1048576 bytes read for 1591 ms
-  1048576 bytes written for 1586 ms
+  1048576 bytes written for 1570 ms
 **** READY ****
 
+##################################################################################
 
----------------------------------------------------------
-SPI-Frequency = 25 MHz, USE_SPI_ARRAY_TRANSFER = 1
+sdmmc_frequency = BOARD_MAX_SDMMC_FREQ (= 52 MHz)
 
-** USING SDFATFS **
-SD Card Type: SDHC
-SD Card Size: 30419MB
-
-listDir (standardized function for SdFatFS, SD_MMC and SD) will be used ...
-  listDir...
-    listDir with SDFAT_FS takes 1841 ms for 2038 files in 119 /dirs
-
-A playlist implmentation, based on SdFatFS will be used ...
-  playlist.create (building playlist) ...
-    plist.create takes 829 ms for 1941 files in 85 /dirs
-
-Creating Dir: /mydir
-  Dir created
-CreateDirWithOpen: path: /mydir/open.dir/
-  path '/mydir/open.dir/' is created as dir
-  dir '/mydir/open.dir/' was removed
-Removing Dir: /mydir
-  Dir removed
-Writing file: /hello.txt
-  File written
-Appending to file: /hello.txt
-  Message appended
-Reading file: /hello.txt
-  Read from file: Hello World!
-Deleting file: /foo.txt
-  File deleted
-Renaming file /hello.txt to /foo.txt
-  File renamed
-Reading file: /foo.txt
-  Read from file: Hello World!
-TestFileIO file: /test.txt
-  1048576 bytes read for 514 ms
-  1048576 bytes written for 524 ms
-**** READY ****
-
----------------------------------------------------------
-SPI-Frequency = 50 MHz, USE_SPI_ARRAY_TRANSFER = 1
-
-** USING SDFATFS **
-SD Card Type: SDHC
-SD Card Size: 30419MB
-
-listDir (standardized function for SdFatFS, SD_MMC and SD) will be used ...
-  listDir...
-    listDir with SDFAT_FS takes 1429 ms for 2038 files in 119 /dirs
-
-A playlist implmentation, based on SdFatFS will be used ...
-  playlist.create (building playlist) ...
-    plist.create takes 622 ms for 1941 files in 85 /dirs
-
-Creating Dir: /mydir
-  Dir created
-CreateDirWithOpen: path: /mydir/open.dir/
-  path '/mydir/open.dir/' is created as dir
-  dir '/mydir/open.dir/' was removed
-Removing Dir: /mydir
-  Dir removed
-Writing file: /hello.txt
-  File written
-Appending to file: /hello.txt
-  Message appended
-Reading file: /hello.txt
-  Read from file: Hello World!
-Deleting file: /foo.txt
-  File deleted
-Renaming file /hello.txt to /foo.txt
-  File renamed
-Reading file: /foo.txt
-  Read from file: Hello World!
-TestFileIO file: /test.txt
-  1048576 bytes read for 301 ms
-  1048576 bytes written for 309 ms
-**** READY ****
-
-
-#########################################################
-** USING SD_MMC **
+******* Test SD_MMC *******
 SD Card Type: SDHC
 SD Card Size: 30436MB
-listDir...
-listDir with SD_MMC takes 50506 ms for 1872 files in 113 /dirs
-
-Creating Dir: /mydir
-  Dir created
-CreateDirWithOpen: path: /mydir/open.dir/
-[ 51046][E][vfs_api.cpp:332] VFSFileImpl(): fopen(/sdmmc/mydir/open.dir/) failed
-  open / creation failed
-Removing Dir: /mydir
-  rmdir failed
-Writing file: /hello.txt
-  File written
-Appending to file: /hello.txt
-  Message appended
-Reading file: /hello.txt
-  Read from file: Hello World!
-Deleting file: /foo.txt
-  File deleted
-Renaming file /hello.txt to /foo.txt
-  File renamed
-Reading file: /foo.txt
-  Read from file: Hello World!
-TestFileIO file: /test.txt
-  1048576 bytes read for 313 ms
-  1048576 bytes written for 485 ms
-**** READY ****
-
-
-#########################################################
-** USING SD **
-SD Card Type: SDHC
-SD Card Size: 30436MB
-
-listDir (standardized function for SdFatFS, SD_MMC and SD) will be used ...
-  listDir...
-listDir with SD takes 41861 ms for 2038 files in 119 /dirs
+Test listDir...
+  processing listDir for Test SD_MMC takes 28609 ms for 2002 files in 118 /dirs
 
 Creating Dir: /mydir
   Dir created
@@ -224,8 +106,42 @@ Renaming file /hello.txt to /foo.txt
 Reading file: /foo.txt
   Read from file: Hello World!
 TestFileIO file: /test.txt
-  1048576 bytes read for 668 ms
-  1048576 bytes written for 715 ms
+  1048576 bytes read for 304 ms
+  1048576 bytes written for 667 ms
 **** READY ****
 
+##################################################################################
+
+SPI-Frequency = 40 MHz
+
+******* Test SD *******
+SD Card Type: SDHC
+SD Card Size: 30436MB
+Test listDir...
+  processing listDir for Test SD takes 40934 ms for 2002 files in 118 /dirs
+
+Creating Dir: /mydir
+  Dir created
+CreateDirWithOpen: path: /mydir/open.dir/
+  path '/mydir/open.dir/' is created as dir
+  dir '/mydir/open.dir/' was removed
+Removing Dir: /mydir
+  Dir removed
+Writing file: /hello.txt
+  File written
+Appending to file: /hello.txt
+  Message appended
+Reading file: /hello.txt
+  Read from file: Hello World!
+Deleting file: /foo.txt
+  File deleted
+Renaming file /hello.txt to /foo.txt
+  File renamed
+Reading file: /foo.txt
+  Read from file: Hello World!
+TestFileIO file: /test.txt
+  1048576 bytes read for 667 ms
+  1048576 bytes written for 720 ms
+**** READY ****
  
+##################################################################################

@@ -158,9 +158,9 @@ bool playNextFile(int offset) {
 void audio_info(const char *info) {
     Serial.print("info        "); Serial.println(info);
 }
-void audio_id3data(const char *info) {  //id3 metadata
-    // Serial.print("id3data     ");Serial.println(info);
-}
+// void audio_id3data(const char *info) {  //id3 metadata
+//     Serial.print("id3data     ");Serial.println(info);
+// }
 void audio_eof_mp3(const char *info) {  //end of file
     Serial.print("eof_mp3     ");Serial.println(info);
     f_eof = true;
