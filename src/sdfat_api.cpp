@@ -160,10 +160,10 @@ String SDFATFSFileImpl::getNextFileName(void) {
 String SDFATFSFileImpl::getNextFileName(bool *isDir) {
     FileType f;
     if (_file.isDir()) {
-        String name; 
+        bool is_root = _file.isRoot();
         if (f.openNext(&_file)) {
-            name = _pa.path();
-            name += '/';
+            String name = _pa.path();
+            if ( !is_root ) name += '/';
             name += getName(f);
             if (isDir) *isDir = f.isDir();
             f.close();
