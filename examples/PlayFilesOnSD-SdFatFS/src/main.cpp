@@ -62,6 +62,13 @@ int subdirLevels = 10;      // subdirLevels = 0 : add only files from dir to pla
 
 /**************************************************/
 
+// new with V3.4.2
+void my_audio_info(Audio::msg_t m) {
+    Serial.printf("%s: %s\n", m.s, m.msg);
+    if ( m.e == Audio::evt_eof ) f_eof = true;
+}
+
+/**************************************************/
 void setup() {
     Serial.begin(115200);
     // SPI CLK 50 MHZ was successfully tested with the YB-ESP32-S3 AMP board from yellobyte. If problems occur, the CLK frequency should be reduced to 25 or 16 MHz.
@@ -69,11 +76,14 @@ void setup() {
         log_e("Card Mount failed!");
         return;
     }
-    
+    Serial.println(audio.getVersion());
     audio.setPinout(I2S_BCLK, I2S_LRC, I2S_DOUT);
     audio.setVolumeSteps(volume_steps);
     audio.setVolume(default_volume); // 0...21 Will need to add a volume setting in the app
 
+    // new with V3.4.2
+    Audio::audio_info_callback = my_audio_info;
+    
     plist.setFileFilter( {"mp3", "ogg", "wav"} );   // optional list consist of the  extensions of files to be considered for the playlist. Empty list = all file types 
     uint32_t start = millis();
     uint32_t end = start;
@@ -154,6 +164,8 @@ bool playNextFile(int offset) {
     return false;
 }
 
+
+// obsolet with V3.4.2
 // optional
 void audio_info(const char *info) {
     Serial.print("info        "); Serial.println(info);
